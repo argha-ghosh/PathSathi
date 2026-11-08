@@ -1,5 +1,6 @@
 // app/(auth)/register.tsx
-// Registration screen – name, email, password, confirm password.
+// Unified registration screen – handles both Tutor and Student roles.
+// Role is passed via query param: /(auth)/register?role=tutor or ?role=student
 
 import React, { useState } from 'react';
 import {
@@ -16,7 +17,7 @@ import {
   type ReturnKeyTypeOptions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../../context/AuthContext';
@@ -33,15 +34,19 @@ import {
 interface FormErrors {
   name?: string;
   email?: string;
+  phone?: string;
   password?: string;
   confirmPassword?: string;
 }
 
 export default function RegisterScreen() {
-  const { register, authLoading } = useAuth();
+  const { registerTutor, registerStudent, authLoading } = useAuth();
+  const { role: roleParam } = useLocalSearchParams<{ role?: string }>();
+  const role: 'tutor' | 'student' = roleParam === 'tutor' ? 'tutor' : 'student';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -62,6 +67,14 @@ export default function RegisterScreen() {
       e.email = 'Email is required.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       e.email = 'Enter a valid email address.';
+    }
+
+    if (role === 'student') {
+      if (!phone.trim()) {
+        e.phone = 'Phone number is required.';
+      } else if (!/^01[3-9]\d{8}$/.test(phone.trim())) {
+        e.phone = 'Enter a valid Bangladeshi phone number (e.g. 01712345678).';
+      }
     }
 
     if (!password) {
@@ -89,8 +102,13 @@ export default function RegisterScreen() {
     if (!validate()) return;
 
     try {
-      await register(name.trim(), email.trim(), password);
-      router.replace('/(tutor)/board');
+      if (role === 'tutor') {
+        await registerTutor(name.trim(), email.trim(), password);
+        router.replace('/(tutor)/board' as never);
+      } else {
+        await registerStudent(name.trim(), email.trim(), password, phone.trim());
+        router.replace('/(student)/home' as never);
+      }
     } catch (err) {
       if (err instanceof AuthError) {
         setGlobalError(err.message);
@@ -99,6 +117,8 @@ export default function RegisterScreen() {
       }
     }
   }
+
+  const isStudent = role === 'student';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -132,8 +152,22 @@ export default function RegisterScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Create account</Text>
             <Text style={styles.cardSubtitle}>
-              Join as a tutor and find students near you
+              {isStudent
+                ? 'Join as a student and find your perfect tutor'
+                : 'Join as a tutor and find students near you'}
             </Text>
+
+            {/* Role badge */}
+            <View style={styles.roleBadge}>
+              <Ionicons
+                name={isStudent ? 'person-outline' : 'school-outline'}
+                size={14}
+                color={Colors.primary}
+              />
+              <Text style={styles.roleBadgeText}>
+                {isStudent ? 'Student Account' : 'Tutor Account'}
+              </Text>
+            </View>
 
             {/* Global error */}
             {globalError ? (
@@ -149,7 +183,7 @@ export default function RegisterScreen() {
               icon="person-outline"
               value={name}
               onChangeText={(t) => { setName(t); clearError('name'); }}
-              placeholder="e.g. Arif Hassan"
+              placeholder="e.g. Rahim Uddin"
               autoCapitalize="words"
               returnKeyType="next"
               error={errors.name}
@@ -170,6 +204,22 @@ export default function RegisterScreen() {
               error={errors.email}
               accessibilityLabel="Email address"
             />
+
+            {/* Phone – student only */}
+            {isStudent && (
+              <InputField
+                label="Phone Number"
+                icon="call-outline"
+                value={phone}
+                onChangeText={(t) => { setPhone(t); clearError('phone'); }}
+                placeholder="e.g. 01712345678"
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                returnKeyType="next"
+                error={errors.phone}
+                accessibilityLabel="Phone number"
+              />
+            )}
 
             {/* Password */}
             <PasswordField
@@ -217,7 +267,6 @@ export default function RegisterScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Terms note */}
             <Text style={styles.termsText}>
               By creating an account you agree to our{' '}
               <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
@@ -260,17 +309,15 @@ interface InputFieldProps {
   accessibilityLabel?: string;
 }
 
-function InputField({ label, icon, error, value, onChangeText, placeholder, keyboardType, autoCapitalize, autoCorrect, returnKeyType, accessibilityLabel }: InputFieldProps) {
+function InputField({
+  label, icon, error, value, onChangeText, placeholder,
+  keyboardType, autoCapitalize, autoCorrect, returnKeyType, accessibilityLabel,
+}: InputFieldProps) {
   return (
     <View style={fieldStyles.wrapper}>
       <Text style={fieldStyles.label}>{label}</Text>
       <View style={[fieldStyles.row, error ? fieldStyles.rowError : null]}>
-        <Ionicons
-          name={icon}
-          size={18}
-          color={Colors.textTertiary}
-          style={fieldStyles.icon}
-        />
+        <Ionicons name={icon} size={18} color={Colors.textTertiary} style={fieldStyles.icon} />
         <TextInput
           style={fieldStyles.input}
           value={value}
@@ -304,16 +351,8 @@ interface PasswordFieldProps {
 }
 
 function PasswordField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  show,
-  onToggleShow,
-  returnKeyType,
-  onSubmitEditing,
-  error,
-  accessibilityLabel,
+  label, value, onChangeText, placeholder, show, onToggleShow,
+  returnKeyType, onSubmitEditing, error, accessibilityLabel,
 }: PasswordFieldProps) {
   return (
     <View style={fieldStyles.wrapper}>
@@ -360,10 +399,7 @@ function PasswordField({
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  safe: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
@@ -417,8 +453,24 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     fontSize: Typography.base,
     color: Colors.textSecondary,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.md,
     lineHeight: Typography.base * 1.5,
+  },
+  roleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.primarySurface,
+    borderRadius: Radius.full,
+    paddingVertical: 4,
+    paddingHorizontal: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  roleBadgeText: {
+    fontSize: Typography.sm,
+    fontWeight: Typography.semiBold,
+    color: Colors.primary,
   },
   errorBanner: {
     flexDirection: 'row',
@@ -431,11 +483,7 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
     marginBottom: Spacing.base,
   },
-  errorBannerText: {
-    flex: 1,
-    fontSize: Typography.sm,
-    color: Colors.error,
-  },
+  errorBannerText: { flex: 1, fontSize: Typography.sm, color: Colors.error },
   primaryButton: {
     height: TouchTarget,
     backgroundColor: Colors.primary,
@@ -457,20 +505,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.base,
     lineHeight: Typography.xs * 1.6,
   },
-  termsLink: {
-    color: Colors.primary,
-    fontWeight: Typography.medium,
-  },
+  termsLink: { color: Colors.primary, fontWeight: Typography.medium },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.xl,
   },
-  footerText: {
-    fontSize: Typography.base,
-    color: Colors.textSecondary,
-  },
+  footerText: { fontSize: Typography.base, color: Colors.textSecondary },
   footerLink: {
     fontSize: Typography.base,
     fontWeight: Typography.semiBold,
@@ -479,10 +521,7 @@ const styles = StyleSheet.create({
 });
 
 const fieldStyles = StyleSheet.create({
-  wrapper: {
-    marginBottom: Spacing.base,
-    gap: Spacing.xs,
-  },
+  wrapper: { marginBottom: Spacing.base, gap: Spacing.xs },
   label: {
     fontSize: Typography.sm,
     fontWeight: Typography.semiBold,
@@ -498,13 +537,8 @@ const fieldStyles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     height: TouchTarget,
   },
-  rowError: {
-    borderColor: Colors.error,
-    backgroundColor: Colors.errorSurface,
-  },
-  icon: {
-    marginRight: Spacing.xs,
-  },
+  rowError: { borderColor: Colors.error, backgroundColor: Colors.errorSurface },
+  icon: { marginRight: Spacing.xs },
   input: {
     flex: 1,
     fontSize: Typography.base,
@@ -512,8 +546,5 @@ const fieldStyles = StyleSheet.create({
     height: TouchTarget,
     padding: 0,
   },
-  error: {
-    fontSize: Typography.xs,
-    color: Colors.error,
-  },
+  error: { fontSize: Typography.xs, color: Colors.error },
 });

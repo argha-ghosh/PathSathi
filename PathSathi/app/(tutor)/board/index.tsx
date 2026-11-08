@@ -94,7 +94,7 @@ export default function BoardScreen() {
     return (
       <PostCard
         post={item}
-        onPress={() => router.push(`/(tutor)/board/${item.id}`)}
+        onPress={() => router.push(`/(tutor)/board/${item.id}` as never)}
       />
     );
   }

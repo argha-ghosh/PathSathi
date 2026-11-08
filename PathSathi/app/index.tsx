@@ -1,5 +1,5 @@
 // app/index.tsx
-// Auth gate – redirects to the appropriate screen based on login state.
+// Auth gate – redirects to the appropriate section based on login state and role.
 
 import { Redirect } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
@@ -18,8 +18,12 @@ export default function Index() {
   }
 
   if (!user) {
-    return <Redirect href={'/(auth)/login' as never} />;
+    return <Redirect href="/(auth)/login" />;
   }
 
-  return <Redirect href="/(tutor)/board" />;
+  if (user.role === 'tutor') {
+    return <Redirect href={'/(tutor)/board' as never} />;
+  }
+
+  return <Redirect href={'/(student)/home' as never} />;
 }

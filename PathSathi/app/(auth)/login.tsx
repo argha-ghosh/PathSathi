@@ -1,5 +1,5 @@
 // app/(auth)/login.tsx
-// Login screen – email + password, links to register.
+// Unified login screen – role selector (Tutor / Student) + email + password.
 
 import React, { useState } from 'react';
 import {
@@ -28,15 +28,23 @@ import {
   TouchTarget,
 } from '../../constants/theme';
 
+type Role = 'tutor' | 'student';
+
 export default function LoginScreen() {
   const { login, authLoading } = useAuth();
 
+  const [role, setRole] = useState<Role>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [globalError, setGlobalError] = useState('');
+
+  const demoCredentials: Record<Role, string> = {
+    tutor: 'arif@example.com / password123',
+    student: 'rahim@example.com / password123',
+  };
 
   function validate(): boolean {
     let valid = true;
@@ -64,8 +72,12 @@ export default function LoginScreen() {
     if (!validate()) return;
 
     try {
-      await login(email.trim(), password);
-      router.replace('/(tutor)/board');
+      await login(email.trim(), password, role);
+      if (role === 'tutor') {
+        router.replace('/(tutor)/board' as never);
+      } else {
+        router.replace('/(student)/home' as never);
+      }
     } catch (err) {
       if (err instanceof AuthError) {
         setGlobalError(err.message);
@@ -92,13 +104,42 @@ export default function LoginScreen() {
               <Ionicons name="navigate-circle" size={56} color={Colors.primary} />
             </View>
             <Text style={styles.appName}>PathSathi</Text>
-            <Text style={styles.tagline}>Your path to better teaching</Text>
+            <Text style={styles.tagline}>Your trusted tutor-matching platform</Text>
+          </View>
+
+          {/* ── Role Selector ── */}
+          <View style={styles.roleRow}>
+            {(['student', 'tutor'] as Role[]).map((r) => (
+              <TouchableOpacity
+                key={r}
+                style={[styles.roleBtn, role === r && styles.roleBtnActive]}
+                onPress={() => {
+                  setRole(r);
+                  setGlobalError('');
+                  setEmailError('');
+                  setPasswordError('');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Sign in as ${r}`}
+              >
+                <Ionicons
+                  name={r === 'tutor' ? 'school-outline' : 'person-outline'}
+                  size={18}
+                  color={role === r ? Colors.textInverse : Colors.textSecondary}
+                />
+                <Text style={[styles.roleBtnText, role === r && styles.roleBtnTextActive]}>
+                  {r === 'tutor' ? 'Tutor' : 'Student'}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           {/* ── Card ── */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Welcome back</Text>
-            <Text style={styles.cardSubtitle}>Sign in to your tutor account</Text>
+            <Text style={styles.cardSubtitle}>
+              Sign in to your {role} account
+            </Text>
 
             {/* Global error */}
             {globalError ? (
@@ -191,7 +232,7 @@ export default function LoginScreen() {
             <View style={styles.demoHint}>
               <Ionicons name="information-circle-outline" size={14} color={Colors.textTertiary} />
               <Text style={styles.demoHintText}>
-                Demo: <Text style={styles.demoCode}>arif@example.com</Text> / <Text style={styles.demoCode}>password123</Text>
+                Demo: <Text style={styles.demoCode}>{demoCredentials[role]}</Text>
               </Text>
             </View>
           </View>
@@ -200,7 +241,7 @@ export default function LoginScreen() {
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
             <TouchableOpacity
-              onPress={() => router.push('/(auth)/register' as never)}
+              onPress={() => router.push(`/(auth)/register?role=${role}` as never)}
               accessibilityRole="button"
               accessibilityLabel="Go to register"
             >
@@ -214,10 +255,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  safe: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
@@ -225,11 +263,9 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing['3xl'],
     justifyContent: 'center',
   },
-
-  // Brand
   brandSection: {
     alignItems: 'center',
-    paddingVertical: Spacing['3xl'],
+    paddingVertical: Spacing['2xl'],
   },
   logoWrap: {
     width: 80,
@@ -251,9 +287,37 @@ const styles = StyleSheet.create({
     fontSize: Typography.base,
     color: Colors.textSecondary,
     marginTop: Spacing.xs,
+    textAlign: 'center',
   },
-
-  // Card
+  // Role selector
+  roleRow: {
+    flexDirection: 'row',
+    backgroundColor: Colors.border,
+    borderRadius: Radius.lg,
+    padding: 3,
+    marginBottom: Spacing.lg,
+  },
+  roleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    height: 40,
+    borderRadius: Radius.md,
+  },
+  roleBtnActive: {
+    backgroundColor: Colors.primary,
+    ...Shadow.sm,
+  },
+  roleBtnText: {
+    fontSize: Typography.base,
+    fontWeight: Typography.semiBold,
+    color: Colors.textSecondary,
+  },
+  roleBtnTextActive: {
+    color: Colors.textInverse,
+  },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius['2xl'],
@@ -273,8 +337,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginBottom: Spacing.xl,
   },
-
-  // Error banner
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -286,17 +348,8 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
     marginBottom: Spacing.base,
   },
-  errorBannerText: {
-    flex: 1,
-    fontSize: Typography.sm,
-    color: Colors.error,
-  },
-
-  // Fields
-  fieldWrapper: {
-    marginBottom: Spacing.base,
-    gap: Spacing.xs,
-  },
+  errorBannerText: { flex: 1, fontSize: Typography.sm, color: Colors.error },
+  fieldWrapper: { marginBottom: Spacing.base, gap: Spacing.xs },
   label: {
     fontSize: Typography.sm,
     fontWeight: Typography.semiBold,
@@ -312,13 +365,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     height: TouchTarget,
   },
-  inputRowError: {
-    borderColor: Colors.error,
-    backgroundColor: Colors.errorSurface,
-  },
-  inputIcon: {
-    marginRight: Spacing.xs,
-  },
+  inputRowError: { borderColor: Colors.error, backgroundColor: Colors.errorSurface },
+  inputIcon: { marginRight: Spacing.xs },
   input: {
     flex: 1,
     fontSize: Typography.base,
@@ -326,12 +374,7 @@ const styles = StyleSheet.create({
     height: TouchTarget,
     padding: 0,
   },
-  fieldError: {
-    fontSize: Typography.xs,
-    color: Colors.error,
-  },
-
-  // Buttons
+  fieldError: { fontSize: Typography.xs, color: Colors.error },
   primaryButton: {
     height: TouchTarget,
     backgroundColor: Colors.primary,
@@ -346,8 +389,6 @@ const styles = StyleSheet.create({
     fontWeight: Typography.semiBold,
     color: Colors.textInverse,
   },
-
-  // Demo hint
   demoHint: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -355,26 +396,15 @@ const styles = StyleSheet.create({
     marginTop: Spacing.base,
     justifyContent: 'center',
   },
-  demoHintText: {
-    fontSize: Typography.xs,
-    color: Colors.textTertiary,
-  },
-  demoCode: {
-    fontWeight: Typography.semiBold,
-    color: Colors.textSecondary,
-  },
-
-  // Footer
+  demoHintText: { fontSize: Typography.xs, color: Colors.textTertiary },
+  demoCode: { fontWeight: Typography.semiBold, color: Colors.textSecondary },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.xl,
   },
-  footerText: {
-    fontSize: Typography.base,
-    color: Colors.textSecondary,
-  },
+  footerText: { fontSize: Typography.base, color: Colors.textSecondary },
   footerLink: {
     fontSize: Typography.base,
     fontWeight: Typography.semiBold,

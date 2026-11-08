@@ -53,3 +53,23 @@ export const DAYS_OF_WEEK: string[] = [
   'Thu',
   'Fri',
 ];
+
+// ── Student Module options ────────────────────────────────────────
+export const DIVISIONS: string[] = [
+  'Dhaka', 'Chittagong', 'Rajshahi', 'Khulna', 'Sylhet', 'Barisal', 'Rangpur', 'Mymensingh',
+];
+
+export const DISTRICTS: string[] = [
+  'Dhaka', 'Gazipur', 'Narayanganj', 'Chittagong', 'Comilla', 'Rajshahi', 'Khulna', 'Sylhet',
+];
+
+export const TEACHING_METHODS_STUDENT: string[] = ['Home Tuition', 'Online', 'Both'];
+
+export const TUTOR_GENDERS: string[] = ['Male', 'Female', 'Any'];
+
+export const PREFERRED_TIMES: string[] = [
+  'Morning (6am–12pm)',
+  'Afternoon (12pm–5pm)',
+  'Evening (5pm–9pm)',
+  'Flexible',
+];
