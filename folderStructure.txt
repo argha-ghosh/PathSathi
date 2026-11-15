@@ -1,0 +1,91 @@
+PathSathi/
+│
+├── .expo/
+│   ├── devices.json
+│   ├── README.md
+│   └── types/
+│       └── router.d.ts
+│
+├── app/
+│   ├── (auth)/
+│   │   ├── login.tsx
+│   │   ├── register.tsx
+│   │   └── _layout.tsx
+│   ├── (tutor)/
+│   │   ├── board/
+│   │   │   ├── index.tsx
+│   │   │   ├── [id].tsx
+│   │   │   └── _layout.tsx
+│   │   ├── profile/
+│   │   │   ├── edit.tsx
+│   │   │   ├── index.tsx
+│   │   │   └── _layout.tsx
+│   │   ├── applications.tsx
+│   │   └── _layout.tsx
+│   ├── index.tsx
+│   └── _layout.tsx
+│
+├── assets/
+│   ├── adaptive-icon.png
+│   ├── favicon.png
+│   ├── icon.png
+│   └── splash.png
+│
+├── components/
+│   └── tutor/
+│       ├── ApplicationCard.tsx
+│       ├── Avatar.tsx
+│       ├── ChipSelect.tsx
+│       ├── EmptyState.tsx
+│       ├── ErrorState.tsx
+│       ├── FilterChips.tsx
+│       ├── FilterSheet.tsx
+│       ├── FormField.tsx
+│       ├── LoadingState.tsx
+│       ├── PostCard.tsx
+│       ├── SegmentedTabs.tsx
+│       ├── StatusBadge.tsx
+│       └── VerificationBadge.tsx
+│
+├── constants/
+│   └── theme.ts
+│
+├── context/
+│   └── AuthContext.tsx
+│
+├── hooks/
+│   ├── useApply.ts
+│   ├── useMyApplications.ts
+│   ├── useTuitionPost.ts
+│   ├── useTuitionPosts.ts
+│   └── useTutorProfile.ts
+│
+├── mocks/
+│   ├── applications.ts
+│   ├── authStore.ts
+│   ├── options.ts
+│   ├── tuitionPosts.ts
+│   └── tutorProfile.ts
+│
+├── scripts/
+│   └── gen-assets.js
+│
+├── services/
+│   ├── authApi.ts
+│   └── tutorApi.ts
+│
+├── types/
+│   └── tutor.ts
+│
+├── utils/
+│   ├── format.ts
+│   └── validation.ts
+│
+├── node_modules/          (dependencies)
+├── app.json
+├── babel.config.js
+├── expo-env.d.ts
+├── metro.config.js
+├── package.json
+├── package-lock.json
+└── tsconfig.json
