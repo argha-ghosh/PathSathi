@@ -1,62 +1,125 @@
 // app/(tutor)/board/[id].tsx
-// Screen 2 – Tuition Detail + Apply
+// Screen 2 — Tuition Post Detail & Apply
+//
+// This is a DYNAMIC ROUTE. The filename [id].tsx means Expo Router will match
+// any URL like /(tutor)/board/1, /(tutor)/board/abc, etc. and make the segment
+// available via useLocalSearchParams() — same pattern as ArticleDetail in Week 3.
+//
+// What this screen does:
+//   1. Reads the `id` param from the URL
+//   2. Fetches the matching tuition post
+//   3. Checks if the tutor has already applied to this post
+//   4. Shows post details (class level, area, salary, days/week, description)
+//   5. Shows one of three bottom sections depending on state:
+//        a) Post is closed → "not accepting applications" notice
+//        b) Already applied → shows applied date + status badge
+//        c) Open & not applied → apply form with a message TextInput
+//
+// Key patterns used (from lab manuals):
+//   - useLocalSearchParams() to read the dynamic :id segment (Week 3)
+//   - useState for the controlled message input (Week 1 / Week 4)
+//   - useEffect with cleanup to run an async side-effect (Week 4)
+//   - Conditional rendering based on state (Week 1)
+//   - router.push() for navigation (Week 3)
 
-import React, { useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
-import { useTuitionPost } from '../../../hooks/useTuitionPost';
-import { useApply, findExistingApplication } from '../../../hooks/useApply';
-import { LoadingState } from '../../../components/tutor/LoadingState';
-import { ErrorState } from '../../../components/tutor/ErrorState';
-import { StatusBadge } from '../../../components/tutor/StatusBadge';
-import { formatSalary, formatDate } from '../../../utils/format';
-import { validateApplyMessage } from '../../../utils/validation';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect } from 'react';
 import {
-  Colors,
-  Typography,
-  Spacing,
-  Radius,
-  Shadow,
-  TouchTarget,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Custom hooks — each hook encapsulates one responsibility
+import { findExistingApplication, useApply } from '../../../hooks/useApply';
+import { useTuitionPost } from '../../../hooks/useTuitionPost';
+
+// Shared UI components
+import { ErrorState } from '../../../components/tutor/ErrorState';
+import { LoadingState } from '../../../components/tutor/LoadingState';
+import { StatusBadge } from '../../../components/tutor/StatusBadge';
+
+// Utility functions for display formatting
+import { formatDate, formatSalary } from '../../../utils/format';
+import { validateApplyMessage } from '../../../utils/validation';
+
+import {
+    Colors,
+    Radius,
+    Shadow,
+    Spacing,
+    TouchTarget,
+    Typography,
 } from '../../../constants/theme';
 
+// ---------------------------------------------------------------------------
+// Main screen component
+// ---------------------------------------------------------------------------
+
 export default function TuitionDetailScreen() {
+  // ---------------------------------------------------------------------------
+  // Route param
+  // ---------------------------------------------------------------------------
+  // useLocalSearchParams() reads the URL segment named in the filename.
+  // For /(tutor)/board/42, this gives { id: '42' }.
+  // This is the same hook used in Week 3's ArticleDetail screen.
   const { id } = useLocalSearchParams<{ id: string }>();
 
+  // ---------------------------------------------------------------------------
+  // Data hooks
+  // ---------------------------------------------------------------------------
+  // useTuitionPost fetches the single post matching `id`
   const { data: post, loading, error, refetch } = useTuitionPost(id);
 
+  // useApply manages the apply action and stores the existing application
   const {
-    existingApplication,
-    applying,
-    applyError,
-    apply,
-    setExistingApplication,
+    existingApplication,  // the tutor's prior application, or null if none
+    applying,             // true while the apply API call is in progress
+    applyError,           // error message if the apply call failed
+    apply,                // async function: apply(postId, message)
+    setExistingApplication, // setter so the useEffect below can populate it
   } = useApply();
 
+  // ---------------------------------------------------------------------------
+  // Local state for the apply form
+  // ---------------------------------------------------------------------------
+  // The message TextInput is a controlled component — its value is stored in
+  // state, just like the form fields in Week 4's AddStudentForm.
   const [message, setMessage] = React.useState('');
+
+  // Inline validation error shown below the TextInput
   const [messageError, setMessageError] = React.useState<string | null>(null);
+
+  // Guard state: true while we're checking for an existing application.
+  // We don't want to show the "Apply" form before we know whether the tutor
+  // has already applied, so we block rendering until this check is done.
   const [checkingExisting, setCheckingExisting] = React.useState(true);
 
-  // Once the post loads, check for an existing application
+  // ---------------------------------------------------------------------------
+  // Side effect: check for existing application when the post loads
+  // ---------------------------------------------------------------------------
+  // This useEffect runs every time `post` changes (i.e., once it loads from
+  // the API). It calls findExistingApplication and stores the result.
+  //
+  // The cleanup function sets `cancelled = true` so that if the component
+  // unmounts before the async call finishes, we don't call setState on an
+  // unmounted component. This is the same cleanup pattern taught in Week 4
+  // (the fake-submit useEffect with clearTimeout).
   useEffect(() => {
-    if (!post) return;
+    if (!post) return; // nothing to check until the post has loaded
 
     let cancelled = false;
     setCheckingExisting(true);
 
     findExistingApplication(post.id)
       .then((found) => {
+        // Only update state if the component is still mounted
         if (!cancelled) {
           setExistingApplication(found);
           setCheckingExisting(false);
@@ -66,14 +129,21 @@ export default function TuitionDetailScreen() {
         if (!cancelled) setCheckingExisting(false);
       });
 
+    // Cleanup: if the component unmounts before the Promise resolves, cancel
     return () => {
       cancelled = true;
     };
   }, [post, setExistingApplication]);
 
+  // ---------------------------------------------------------------------------
+  // Apply handler
+  // ---------------------------------------------------------------------------
+  // useCallback memoises this function so it doesn't change on every render.
+  // We validate the message first, then call the apply() function from the hook.
   const handleApply = useCallback(async () => {
     const err = validateApplyMessage(message);
     if (err) {
+      // Show inline error below the TextInput without submitting
       setMessageError(err);
       return;
     }
@@ -81,12 +151,15 @@ export default function TuitionDetailScreen() {
     await apply(post!.id, message);
   }, [message, apply, post]);
 
-  // ── Loading ──
+  // ---------------------------------------------------------------------------
+  // Loading state — show spinner while the post or existing-application check
+  // is in progress. We wait for BOTH to complete before rendering the content.
+  // ---------------------------------------------------------------------------
   if (loading || (post && checkingExisting)) {
     return <LoadingState message="Loading tuition post…" />;
   }
 
-  // ── Error ──
+  // Error state
   if (error) {
     return (
       <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -95,7 +168,7 @@ export default function TuitionDetailScreen() {
     );
   }
 
-  // ── Not found ──
+  // 404 state — post was not found in the data store
   if (!post) {
     return (
       <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -110,9 +183,13 @@ export default function TuitionDetailScreen() {
     );
   }
 
+  // Derived values — computed fresh on every render (not state)
   const isClosed = post.status === 'closed';
   const alreadyApplied = existingApplication !== null;
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView
@@ -121,13 +198,17 @@ export default function TuitionDetailScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── Post header card ── */}
+        {/* ── Hero card ──
+            Shows the subject badge, open/closed status, title, guardian name,
+            and posted date. This is the "above the fold" summary. */}
         <View style={styles.heroCard}>
-          {/* Subject pill + status */}
           <View style={styles.heroTopRow}>
+            {/* Subject pill — same badge pattern as ArticleCard category badges (Week 3) */}
             <View style={styles.subjectPill}>
               <Text style={styles.subjectPillText}>{post.subject}</Text>
             </View>
+            {/* Only show the "Closed" badge when the post is closed —
+                conditional rendering with a ternary (Week 1) */}
             {isClosed ? (
               <View style={styles.closedBadge}>
                 <Text style={styles.closedBadgeText}>Closed</Text>
@@ -140,13 +221,15 @@ export default function TuitionDetailScreen() {
           <Text style={styles.heroDate}>{formatDate(post.createdAt)}</Text>
         </View>
 
-        {/* ── Details grid ── */}
+        {/* ── Details grid ──
+            Four rows showing class level, area, salary, and days/week.
+            Each row is a DetailRow sub-component (defined below). */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Details</Text>
           <View style={styles.detailsGrid}>
-            <DetailRow icon="school-outline" label="Class Level" value={post.classLevel} />
-            <DetailRow icon="location-outline" label="Area" value={post.area} />
-            <DetailRow icon="cash-outline" label="Salary" value={formatSalary(post.salary)} />
+            <DetailRow icon="school-outline"   label="Class Level" value={post.classLevel} />
+            <DetailRow icon="location-outline" label="Area"        value={post.area} />
+            <DetailRow icon="cash-outline"     label="Salary"      value={formatSalary(post.salary)} />
             <DetailRow
               icon="calendar-outline"
               label="Days / Week"
@@ -161,10 +244,14 @@ export default function TuitionDetailScreen() {
           <Text style={styles.descriptionText}>{post.description}</Text>
         </View>
 
-        {/* ── Apply / status section ── */}
+        {/* ── Apply / status section ──
+            This is conditional rendering with three branches (Week 1):
+              1. isClosed        → show "not accepting" notice
+              2. alreadyApplied  → show applied-status summary
+              3. otherwise       → show the apply form */}
         <View style={styles.section}>
           {isClosed ? (
-            /* Post is closed */
+            // Branch 1: Post is closed
             <View style={styles.closedNotice}>
               <Ionicons
                 name="lock-closed-outline"
@@ -176,19 +263,20 @@ export default function TuitionDetailScreen() {
               </Text>
             </View>
           ) : alreadyApplied ? (
-            /* Already applied */
+            // Branch 2: Tutor has already applied
             <AlreadyAppliedSection
               status={existingApplication!.status}
               appliedAt={existingApplication!.appliedAt}
             />
           ) : (
-            /* Apply form */
+            // Branch 3: Post is open and tutor has not applied yet — show form
             <ApplyForm
               message={message}
               messageError={messageError ?? applyError}
               applying={applying}
               onChange={(text) => {
                 setMessage(text);
+                // Clear the validation error as soon as the user starts fixing it
                 if (messageError) setMessageError(null);
               }}
               onSubmit={handleApply}
@@ -201,9 +289,16 @@ export default function TuitionDetailScreen() {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components (kept in this file – they are screen-specific)
+// Sub-components
 // ---------------------------------------------------------------------------
+// These components are defined in this file because they are screen-specific —
+// they won't be reused anywhere else. If a component is needed in multiple
+// screens it should be moved to components/tutor/.
 
+// ── DetailRow ──
+// A single labelled row in the details grid. Uses flexDirection: 'row' to put
+// the icon, label, and value side by side — the same Flexbox row layout taught
+// in Week 2's StudentItem.
 interface DetailRowProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
@@ -224,6 +319,10 @@ function DetailRow({ icon, label, value }: DetailRowProps) {
   );
 }
 
+// ── ApplyForm ──
+// The application form shown when the post is open and not yet applied to.
+// The message TextInput is a CONTROLLED input — its value comes from props
+// (ultimately from useState in the parent). Same pattern as FormField (Week 4).
 interface ApplyFormProps {
   message: string;
   messageError: string | null;
@@ -240,7 +339,7 @@ function ApplyForm({
   onSubmit,
 }: ApplyFormProps) {
   const charCount = message.length;
-  const MAX = 300;
+  const MAX = 300; // maximum allowed characters
 
   return (
     <View style={applyStyles.wrapper}>
@@ -249,7 +348,8 @@ function ApplyForm({
         Write a short message to introduce yourself to the guardian.
       </Text>
 
-      {/* Message input */}
+      {/* Controlled multiline TextInput for the application message.
+          value and onChangeText make it controlled (Week 4 pattern). */}
       <View style={applyStyles.inputWrapper}>
         <TextInput
           style={[applyStyles.input, messageError ? applyStyles.inputError : null]}
@@ -258,14 +358,14 @@ function ApplyForm({
           placeholder="Tell the guardian about your experience and why you're a good fit… (min 20 chars)"
           placeholderTextColor={Colors.textTertiary}
           multiline
-          maxLength={MAX + 50} // let them type but validate
+          maxLength={MAX + 50}   // let them type past MAX — validation will catch it
           editable={!applying}
           selectionColor={Colors.primary}
           textAlignVertical="top"
           accessibilityLabel="Application message"
           accessibilityHint="Minimum 20, maximum 300 characters"
         />
-        {/* Char counter */}
+        {/* Character counter — same concept as the charCount prop on FormField (Week 4) */}
         <Text
           style={[
             applyStyles.charCount,
@@ -276,14 +376,16 @@ function ApplyForm({
         </Text>
       </View>
 
-      {/* Inline error */}
+      {/* Inline validation error — only shown when messageError is not null */}
       {messageError ? (
         <Text style={applyStyles.errorText} accessibilityRole="alert">
           {messageError}
         </Text>
       ) : null}
 
-      {/* Submit button */}
+      {/* Submit button — disabled and shows a spinner while applying.
+          The style array [base, disabled] merges styles when applying is true —
+          the same conditional style array taught in Week 1's Follow button. */}
       <TouchableOpacity
         style={[applyStyles.submitButton, applying && applyStyles.submitDisabled]}
         onPress={onSubmit}
@@ -293,6 +395,7 @@ function ApplyForm({
         accessibilityRole="button"
       >
         {applying ? (
+          // Show ActivityIndicator while the API call is in progress (Week 4)
           <ActivityIndicator size="small" color={Colors.textInverse} />
         ) : (
           <>
@@ -305,6 +408,9 @@ function ApplyForm({
   );
 }
 
+// ── AlreadyAppliedSection ──
+// Shown when the tutor has previously applied. Displays the applied date,
+// a StatusBadge, and a link to the Applications tab.
 interface AlreadyAppliedSectionProps {
   status: import('../../../types/tutor').ApplicationStatus;
   appliedAt: string;
@@ -326,9 +432,11 @@ function AlreadyAppliedSection({
             Applied on {formatDate(appliedAt)}
           </Text>
         </View>
+        {/* StatusBadge shows the current status (pending / accepted / rejected / withdrawn) */}
         <StatusBadge status={status} />
       </View>
 
+      {/* Navigate to the Applications tab — router.push() same as Week 3 */}
       <TouchableOpacity
         style={appliedStyles.viewButton}
         onPress={() => router.push('/(tutor)/applications')}
@@ -350,7 +458,6 @@ function AlreadyAppliedSection({
 // ---------------------------------------------------------------------------
 // Styles
 // ---------------------------------------------------------------------------
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -474,9 +581,10 @@ const styles = StyleSheet.create({
   },
 });
 
+// Styles for the DetailRow sub-component
 const detailStyles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
+    flexDirection: 'row',   // icon + text side by side (Week 2 Flexbox row pattern)
     alignItems: 'center',
     gap: Spacing.md,
     padding: Spacing.md,
@@ -492,7 +600,7 @@ const detailStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   labelWrap: {
-    flex: 1,
+    flex: 1,   // takes remaining horizontal space (Week 2 — flex: 1 on info View)
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -511,6 +619,7 @@ const detailStyles = StyleSheet.create({
   },
 });
 
+// Styles for the ApplyForm sub-component
 const applyStyles = StyleSheet.create({
   wrapper: {
     backgroundColor: Colors.surface,
@@ -583,6 +692,7 @@ const applyStyles = StyleSheet.create({
   },
 });
 
+// Styles for the AlreadyAppliedSection sub-component
 const appliedStyles = StyleSheet.create({
   wrapper: {
     backgroundColor: Colors.acceptedSurface,

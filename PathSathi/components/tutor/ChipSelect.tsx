@@ -1,27 +1,54 @@
 // components/tutor/ChipSelect.tsx
-// Scrollable row of toggleable chip buttons for multi-select (and single-select) fields.
+// A horizontally scrollable row of toggleable chip buttons.
+//
+// Used in the Edit Profile form for multi-select fields (Subjects, Class Levels,
+// Areas) and can also operate in single-select mode (single={true}).
+//
+// Props:
+//   options   — the full list of string options to show as chips
+//   selected  — the currently selected values (controlled by parent state)
+//   onToggle  — callback fired when a chip is tapped; receives the chip's value
+//   single    — if true, the component acts as a radio group (default: false)
+//   error     — validation error string shown below the row (optional)
+//
+// Key concept: this is a CONTROLLED component — the parent owns `selected`
+// (via useState) and updates it through onToggle. The component itself has no
+// internal state. This is the same controlled pattern as TextInput with
+// value + onChangeText (Week 2 / Week 4).
 
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius, TouchTarget } from '../../constants/theme';
+import {
+    Colors,
+    Radius,
+    Spacing,
+    TouchTarget,
+    Typography,
+} from '../../constants/theme';
 
+// ---------------------------------------------------------------------------
+// Props interface
+// ---------------------------------------------------------------------------
 interface ChipSelectProps {
   options: string[];
   selected: string[];
   onToggle: (value: string) => void;
-  /** If true, selecting a chip deselects all others (single-select mode). */
+  /** Single-select mode: selecting a chip deselects all others. */
   single?: boolean;
   error?: string | null;
   accessibilityHint?: string;
 }
 
+// ---------------------------------------------------------------------------
+// ChipSelect component
+// ---------------------------------------------------------------------------
 export function ChipSelect({
   options,
   selected,
@@ -30,23 +57,31 @@ export function ChipSelect({
   error,
   accessibilityHint,
 }: ChipSelectProps) {
+  // Convenience helper to check if a value is selected
   const isSelected = (v: string) => selected.includes(v);
-  // single-select: aria role is "radio"; multi-select: "checkbox"
+
+  // ARIA role: radio for single-select, checkbox for multi-select
   const chipRole = single ? ('radio' as const) : ('checkbox' as const);
 
   return (
     <View style={styles.wrapper}>
+      {/* Horizontal ScrollView so the chip row scrolls when there are many options.
+          This is the standard horizontal tag/badge layout (Week 1 skills section). */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
         accessibilityHint={accessibilityHint}
       >
+        {/* Map over all options to render a chip for each one.
+            Same .map() pattern as Week 1's skills list and Week 2's FlatList. */}
         {options.map((option) => {
           const active = isSelected(option);
           return (
             <TouchableOpacity
               key={option}
+              // Conditional style array — active chip gets a filled background.
+              // Same pattern as Week 1's Follow button styles.
               style={[styles.chip, active && styles.chipActive]}
               onPress={() => onToggle(option)}
               activeOpacity={0.75}
@@ -55,6 +90,7 @@ export function ChipSelect({
               accessibilityLabel={option}
               hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
             >
+              {/* Show a checkmark icon only when the chip is selected */}
               {active ? (
                 <Ionicons
                   name="checkmark"
@@ -70,6 +106,8 @@ export function ChipSelect({
           );
         })}
       </ScrollView>
+
+      {/* Inline error text — same pattern as FormField (Week 4) */}
       {error ? (
         <Text style={styles.errorText} accessibilityRole="alert">
           {error}
@@ -79,13 +117,16 @@ export function ChipSelect({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
   wrapper: {
     gap: Spacing.xs,
   },
   row: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
+    flexWrap: 'nowrap',  // chips stay on one line and scroll horizontally
     gap: Spacing.xs,
     paddingVertical: Spacing.xs,
     paddingHorizontal: 2,
@@ -102,6 +143,7 @@ const styles = StyleSheet.create({
     minHeight: TouchTarget - 8,
     gap: 4,
   },
+  // Active chip: filled primary colour background — conditional style (Week 1)
   chipActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,

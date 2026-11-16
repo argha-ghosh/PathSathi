@@ -346,6 +346,83 @@ function MetaChip({ icon, label }: { icon: React.ComponentProps<typeof Ionicons>
 }
 
 // ---------------------------------------------------------------------------
+// BookingCard
+// ---------------------------------------------------------------------------
+
+function BookingCard({ booking }: { booking: BookingRequest }) {
+  const statusColors: Record<string, { bg: string; text: string; border: string }> = {
+    pending:   { bg: Colors.pendingSurface,   text: Colors.pending,   border: Colors.pendingBorder },
+    confirmed: { bg: Colors.acceptedSurface,  text: Colors.accepted,  border: Colors.acceptedBorder },
+    cancelled: { bg: Colors.rejectedSurface,  text: Colors.rejected,  border: Colors.rejectedBorder },
+  };
+  const sc = statusColors[booking.status] ?? statusColors.pending;
+
+  return (
+    <View style={bkStyles.card}>
+      {/* Tutor row */}
+      <View style={bkStyles.tutorRow}>
+        <View style={bkStyles.avatar}>
+          <Text style={bkStyles.avatarText}>{getInitials(booking.tutor.name)}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={bkStyles.tutorName}>{booking.tutor.name}</Text>
+          <Text style={bkStyles.tutorUni} numberOfLines={1}>{booking.tutor.university}</Text>
+        </View>
+        <View style={[bkStyles.statusBadge, { backgroundColor: sc.bg, borderColor: sc.border }]}>
+          <Text style={[bkStyles.statusText, { color: sc.text }]}>
+            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+          </Text>
+        </View>
+      </View>
+
+      {/* Details */}
+      <View style={bkStyles.detailsGrid}>
+        <DetailItem icon="laptop-outline"   label="Method"    value={booking.teachingMethod} />
+        <DetailItem icon="calendar-outline" label="Days/week" value={`${booking.daysPerWeek} days`} />
+        <DetailItem icon="time-outline"     label="Time"      value={booking.preferredTime} />
+        <DetailItem icon="cash-outline"     label="Salary"    value={formatSalary(booking.tutor.expectedSalary)} />
+      </View>
+
+      {/* Message */}
+      <View style={bkStyles.messageBox}>
+        <Text style={bkStyles.messageLabel}>Your message</Text>
+        <Text style={bkStyles.messageText}>{booking.message}</Text>
+      </View>
+
+      {/* Footer */}
+      <View style={bkStyles.footer}>
+        <Ionicons name="time-outline" size={12} color={Colors.textTertiary} />
+        <Text style={bkStyles.footerText}>{timeAgo(booking.createdAt)}</Text>
+        <Pressable
+          style={bkStyles.profileBtn}
+          onPress={() => router.push(`/(student)/tutor/${booking.tutorId}` as never)}
+        >
+          <Text style={bkStyles.profileBtnText}>View Profile</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function DetailItem({
+  icon, label, value,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={bkStyles.detailItem}>
+      <Ionicons name={icon} size={13} color={Colors.primary} />
+      <View>
+        <Text style={bkStyles.detailLabel}>{label}</Text>
+        <Text style={bkStyles.detailValue}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // ApplicantsModal
 // ---------------------------------------------------------------------------
 
@@ -623,7 +700,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
   },
-  title: { fontSize: Typography['2xl'], fontWeight: Typography.bold, color: Colors.textPrimary },
+  pageTitle: { fontSize: Typography['2xl'], fontWeight: Typography.bold, color: Colors.textPrimary },
   addBtn: {
     width: 40,
     height: 40,
@@ -632,12 +709,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Segment tabs
+  segmentRow: {
+    flexDirection: 'row',
+    marginHorizontal: Spacing.base,
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.border,
+    borderRadius: Radius.lg,
+    padding: 3,
+    gap: 3,
+  },
+  segBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingVertical: 9,
+    borderRadius: Radius.md,
+  },
+  segBtnActive: {
+    backgroundColor: Colors.primary,
+    ...Shadow.sm,
+  },
+  segBtnText: {
+    fontSize: Typography.sm,
+    fontWeight: Typography.semiBold,
+    color: Colors.textSecondary,
+  },
+  segBtnTextActive: { color: Colors.textInverse },
+  badge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  badgeText: { fontSize: 10, fontWeight: Typography.bold, color: Colors.primary },
+  badgeTextActive: { color: Colors.textInverse },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   errorText: { fontSize: Typography.base, color: Colors.error, textAlign: 'center' },
   retryBtn: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.sm, backgroundColor: Colors.primary, borderRadius: Radius.lg },
   retryText: { fontSize: Typography.base, color: Colors.textInverse, fontWeight: Typography.semiBold },
   emptyText: { fontSize: Typography.lg, fontWeight: Typography.semiBold, color: Colors.textPrimary },
-  emptySubText: { fontSize: Typography.base, color: Colors.textSecondary },
+  emptySubText: { fontSize: Typography.base, color: Colors.textSecondary, textAlign: 'center' },
   createBtn: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, backgroundColor: Colors.primary, borderRadius: Radius.lg },
   createBtnText: { fontSize: Typography.base, color: Colors.textInverse, fontWeight: Typography.semiBold },
   list: { paddingHorizontal: Spacing.base, paddingBottom: Spacing['3xl'] },
@@ -805,4 +923,80 @@ const pickerStyles = StyleSheet.create({
   chipActive: { borderColor: Colors.primary, backgroundColor: Colors.primarySurface },
   chipText: { fontSize: Typography.sm, color: Colors.textSecondary, fontWeight: Typography.medium },
   chipTextActive: { color: Colors.primary, fontWeight: Typography.semiBold },
+});
+
+const bkStyles = StyleSheet.create({
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: Spacing.base,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadow.sm,
+    gap: Spacing.md,
+  },
+  tutorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { fontSize: Typography.base, fontWeight: Typography.bold, color: Colors.primary },
+  tutorName: { fontSize: Typography.base, fontWeight: Typography.bold, color: Colors.textPrimary },
+  tutorUni: { fontSize: Typography.xs, color: Colors.textSecondary, marginTop: 2 },
+  statusBadge: {
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderWidth: 1,
+  },
+  statusText: { fontSize: Typography.xs, fontWeight: Typography.bold },
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.xs,
+    width: '47%',
+  },
+  detailLabel: { fontSize: Typography.xs, color: Colors.textTertiary },
+  detailValue: { fontSize: Typography.sm, fontWeight: Typography.semiBold, color: Colors.textPrimary },
+  messageBox: {
+    backgroundColor: Colors.primarySurface,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    gap: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
+  },
+  messageLabel: { fontSize: Typography.xs, fontWeight: Typography.semiBold, color: Colors.primary },
+  messageText: { fontSize: Typography.sm, color: Colors.textSecondary, lineHeight: Typography.sm * 1.5 },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  footerText: { flex: 1, fontSize: Typography.xs, color: Colors.textTertiary },
+  profileBtn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+  },
+  profileBtnText: { fontSize: Typography.xs, fontWeight: Typography.semiBold, color: Colors.primary },
 });

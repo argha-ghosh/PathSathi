@@ -1,15 +1,31 @@
 PathSathi/
-│
 ├── .expo/
+│   ├── cache/
+│   │   └── eslint/
+│   │       └── .cache_ylub4h
+│   ├── types/
+│   │   └── router.d.ts
+│   ├── web/
+│   │   └── cache/production/images/favicon/...
 │   ├── devices.json
-│   ├── README.md
-│   └── types/
-│       └── router.d.ts
+│   └── README.md
 │
-├── app/
+├── .vscode/
+│
+├── app/                          # Expo Router — all routes
 │   ├── (auth)/
 │   │   ├── login.tsx
 │   │   ├── register.tsx
+│   │   └── _layout.tsx
+│   ├── (student)/
+│   │   ├── (tabs)/
+│   │   │   ├── home.tsx
+│   │   │   ├── posts.tsx
+│   │   │   ├── profile.tsx
+│   │   │   ├── saved.tsx
+│   │   │   └── _layout.tsx
+│   │   ├── tutor/
+│   │   │   └── [id].tsx
 │   │   └── _layout.tsx
 │   ├── (tutor)/
 │   │   ├── board/
@@ -17,35 +33,63 @@ PathSathi/
 │   │   │   ├── [id].tsx
 │   │   │   └── _layout.tsx
 │   │   ├── profile/
-│   │   │   ├── edit.tsx
 │   │   │   ├── index.tsx
+│   │   │   ├── edit.tsx
 │   │   │   └── _layout.tsx
 │   │   ├── applications.tsx
 │   │   └── _layout.tsx
 │   ├── index.tsx
+│   ├── modal.tsx
 │   └── _layout.tsx
 │
 ├── assets/
+│   ├── images/
+│   │   ├── android-icon-background.png
+│   │   ├── android-icon-foreground.png
+│   │   ├── android-icon-monochrome.png
+│   │   ├── favicon.png
+│   │   ├── icon.png
+│   │   ├── partial-react-logo.png
+│   │   ├── react-logo.png
+│   │   ├── react-logo@2x.png
+│   │   ├── react-logo@3x.png
+│   │   └── splash-icon.png
 │   ├── adaptive-icon.png
 │   ├── favicon.png
 │   ├── icon.png
 │   └── splash.png
 │
 ├── components/
-│   └── tutor/
-│       ├── ApplicationCard.tsx
-│       ├── Avatar.tsx
-│       ├── ChipSelect.tsx
-│       ├── EmptyState.tsx
-│       ├── ErrorState.tsx
-│       ├── FilterChips.tsx
-│       ├── FilterSheet.tsx
-│       ├── FormField.tsx
-│       ├── LoadingState.tsx
-│       ├── PostCard.tsx
-│       ├── SegmentedTabs.tsx
-│       ├── StatusBadge.tsx
-│       └── VerificationBadge.tsx
+│   ├── student/
+│   │   └── FormField.tsx
+│   ├── tutor/
+│   │   ├── ApplicationCard.tsx
+│   │   ├── Avatar.tsx
+│   │   ├── ChipSelect.tsx
+│   │   ├── EmptyState.tsx
+│   │   ├── ErrorState.tsx
+│   │   ├── FilterChips.tsx
+│   │   ├── FilterSheet.tsx
+│   │   ├── FormField.tsx
+│   │   ├── LoadingState.tsx
+│   │   ├── PostCard.tsx
+│   │   ├── SegmentedTabs.tsx
+│   │   ├── StatusBadge.tsx
+│   │   └── VerificationBadge.tsx
+│   ├── ui/
+│   │   └── collapsible.tsx
+│   ├── Avatar.tsx
+│   ├── EmptyState.tsx
+│   ├── ErrorState.tsx
+│   ├── FormField.tsx
+│   ├── hello-wave.tsx
+│   ├── LoadingState.tsx
+│   ├── parallax-scroll-view.tsx
+│   ├── SelectField.tsx
+│   ├── StarRating.tsx
+│   ├── StatusBadge.tsx
+│   ├── themed-text.tsx
+│   └── themed-view.tsx
 │
 ├── constants/
 │   └── theme.ts
@@ -54,7 +98,11 @@ PathSathi/
 │   └── AuthContext.tsx
 │
 ├── hooks/
+│   ├── use-color-scheme.ts
+│   ├── use-color-scheme.web.ts
+│   ├── use-theme-color.ts
 │   ├── useApply.ts
+│   ├── useBookmarks.ts
 │   ├── useMyApplications.ts
 │   ├── useTuitionPost.ts
 │   ├── useTuitionPosts.ts
@@ -63,29 +111,38 @@ PathSathi/
 ├── mocks/
 │   ├── applications.ts
 │   ├── authStore.ts
+│   ├── bookings.ts
 │   ├── options.ts
+│   ├── reviews.ts
+│   ├── studentPosts.ts
 │   ├── tuitionPosts.ts
-│   └── tutorProfile.ts
+│   ├── tutorProfile.ts
+│   └── tutors.ts
 │
 ├── scripts/
 │   └── gen-assets.js
 │
 ├── services/
 │   ├── authApi.ts
+│   ├── studentApi.ts
 │   └── tutorApi.ts
 │
 ├── types/
+│   ├── student.ts
 │   └── tutor.ts
 │
 ├── utils/
 │   ├── format.ts
 │   └── validation.ts
 │
-├── node_modules/          (dependencies)
+├── AGENTS.md
 ├── app.json
 ├── babel.config.js
+├── eslint.config.js
 ├── expo-env.d.ts
+├── folderStructure.txt
 ├── metro.config.js
 ├── package.json
 ├── package-lock.json
+├── README.md
 └── tsconfig.json

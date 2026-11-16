@@ -1,20 +1,44 @@
 // components/tutor/PostCard.tsx
-// Card displayed in the Tuition Board list.
+// A single card displayed in the Tuition Board FlatList.
+//
+// This component is reusable — BoardScreen passes each TuitionPost from its
+// FlatList renderItem into this card. Same concept as StudentItem in Week 2:
+// you write the card once, then FlatList uses it for every item in the array.
+//
+// Props:
+//   post    — the TuitionPost data to display
+//   onPress — callback fired when the card is tapped (navigates to detail)
+//
+// Lab concept: reusable list-item component with props (Week 1 & 2)
 
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius, Shadow } from '../../constants/theme';
-import { formatSalary, formatDate } from '../../utils/format';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    Colors,
+    Radius,
+    Shadow,
+    Spacing,
+    Typography,
+} from '../../constants/theme';
 import type { TuitionPost } from '../../types/tutor';
+import { formatDate, formatSalary } from '../../utils/format';
 
+// ---------------------------------------------------------------------------
+// Props interface
+// ---------------------------------------------------------------------------
 interface PostCardProps {
   post: TuitionPost;
   onPress: () => void;
 }
 
+// ---------------------------------------------------------------------------
+// PostCard component
+// ---------------------------------------------------------------------------
 export function PostCard({ post, onPress }: PostCardProps) {
   return (
+    // TouchableOpacity makes the entire card tappable (Week 2 — same as
+    // the row press in StudentItem).
     <TouchableOpacity
       style={styles.card}
       onPress={onPress}
@@ -22,7 +46,9 @@ export function PostCard({ post, onPress }: PostCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`Tuition post: ${post.title}`}
     >
-      {/* Header row */}
+      {/* Header row: subject badge (left) + posted date (right)
+          flexDirection: 'row' + justifyContent: 'space-between' puts them
+          on opposite ends — the standard row-layout pattern from Week 2. */}
       <View style={styles.headerRow}>
         <View style={styles.subjectBadge}>
           <Text style={styles.subjectText}>{post.subject}</Text>
@@ -30,14 +56,15 @@ export function PostCard({ post, onPress }: PostCardProps) {
         <Text style={styles.date}>{formatDate(post.createdAt)}</Text>
       </View>
 
-      {/* Title */}
+      {/* Post title — numberOfLines={2} truncates long titles with '…' */}
       <Text style={styles.title} numberOfLines={2}>
         {post.title}
       </Text>
 
-      {/* Meta row */}
+      {/* Meta row: class level, area, days per week.
+          Each is a MetaItem sub-component (icon + label side by side). */}
       <View style={styles.metaRow}>
-        <MetaItem icon="school-outline" label={post.classLevel} />
+        <MetaItem icon="school-outline"   label={post.classLevel} />
         <MetaItem icon="location-outline" label={post.area} />
         <MetaItem
           icon="calendar-outline"
@@ -45,7 +72,7 @@ export function PostCard({ post, onPress }: PostCardProps) {
         />
       </View>
 
-      {/* Footer row */}
+      {/* Footer: salary (left) + chevron button (right) */}
       <View style={styles.footerRow}>
         <Text style={styles.salary}>{formatSalary(post.salary)}</Text>
         <View style={styles.chevronWrap}>
@@ -61,6 +88,12 @@ export function PostCard({ post, onPress }: PostCardProps) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// MetaItem sub-component
+// ---------------------------------------------------------------------------
+// A small icon + text pair used in the meta row.
+// Defining it here (not in a separate file) because it is only used in
+// this card — same approach as the sub-components in Week 3's ArticleDetail.
 interface MetaItemProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
@@ -68,6 +101,7 @@ interface MetaItemProps {
 
 function MetaItem({ icon, label }: MetaItemProps) {
   return (
+    // flexDirection: 'row' aligns the icon and text horizontally (Week 2)
     <View style={styles.metaItem}>
       <Ionicons name={icon} size={13} color={Colors.textTertiary} />
       <Text style={styles.metaText}>{label}</Text>
@@ -75,6 +109,9 @@ function MetaItem({ icon, label }: MetaItemProps) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
@@ -84,6 +121,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     ...Shadow.md,
   },
+  // flexDirection: 'row' + justifyContent: 'space-between' — Week 2 Flexbox
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -110,6 +148,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     lineHeight: Typography.md * Typography.lineHeightNormal,
   },
+  // flexWrap: 'wrap' lets meta items spill onto a second line on small screens
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

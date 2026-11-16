@@ -469,7 +469,7 @@ function BookingModal({
     : 'Home Tuition',
   );
   const [days, setDays] = useState('3');
-  const [time, setTime] = useState(PREFERRED_TIMES[2]);
+  const [time, setTime] = useState<string>(PREFERRED_TIMES[2]);
   const [message, setMessage] = useState('');
   const [booked, setBooked] = useState(false);
   const [submitting, setSubmitting] = useState(false);

@@ -1,21 +1,43 @@
 // components/tutor/ApplicationCard.tsx
-// Card shown in the My Applications list.
+// A single card displayed in the My Applications FlatList.
+//
+// Shows the post subject, title, area, salary, the tutor's application message
+// preview, applied date, current status badge, and (for pending applications)
+// a Withdraw button.
+//
+// Props:
+//   application   — the Application object to display
+//   onWithdraw    — callback fired after the user confirms withdrawal
+//   onViewPost    — callback fired when the card is tapped (navigates to post)
+//   isWithdrawing — true while the withdraw API call for this card is in progress
+//
+// Lab concept: reusable list-item component with conditional rendering (Week 1 & 2)
 
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  StyleSheet,
-  ActivityIndicator,
+    ActivityIndicator,
+    Alert,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Radius, Shadow, TouchTarget } from '../../constants/theme';
-import { formatSalary, formatDate, truncate } from '../../utils/format';
-import { StatusBadge } from './StatusBadge';
+import {
+    Colors,
+    Radius,
+    Shadow,
+    Spacing,
+    TouchTarget,
+    Typography,
+} from '../../constants/theme';
 import type { Application } from '../../types/tutor';
+import { formatDate, formatSalary, truncate } from '../../utils/format';
+import { StatusBadge } from './StatusBadge';
 
+// ---------------------------------------------------------------------------
+// Props interface
+// ---------------------------------------------------------------------------
 interface ApplicationCardProps {
   application: Application;
   onWithdraw: (id: string) => void;
@@ -23,6 +45,9 @@ interface ApplicationCardProps {
   isWithdrawing: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// ApplicationCard component
+// ---------------------------------------------------------------------------
 export function ApplicationCard({
   application,
   onWithdraw,
@@ -31,6 +56,11 @@ export function ApplicationCard({
 }: ApplicationCardProps) {
   const { post } = application;
 
+  // ---------------------------------------------------------------------------
+  // Withdraw confirmation
+  // ---------------------------------------------------------------------------
+  // Alert.alert() shows a native dialog before performing the destructive action.
+  // Same pattern as the "Remove Student" alert in Week 5's StudentDetail.
   function handleWithdraw() {
     Alert.alert(
       'Withdraw Application',
@@ -39,7 +69,7 @@ export function ApplicationCard({
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Withdraw',
-          style: 'destructive',
+          style: 'destructive',         // renders in red on iOS
           onPress: () => onWithdraw(application.id),
         },
       ],
@@ -47,6 +77,7 @@ export function ApplicationCard({
   }
 
   return (
+    // The whole card is tappable — takes the user to the post detail screen
     <TouchableOpacity
       style={styles.card}
       onPress={() => onViewPost(application.postId)}
@@ -54,26 +85,29 @@ export function ApplicationCard({
       accessibilityRole="button"
       accessibilityLabel={`Application for ${post.title}`}
     >
-      {/* Header */}
+      {/* ── Header: subject badge (left) + status badge (right) ──
+          flexDirection: 'row' + justifyContent: 'space-between' (Week 2) */}
       <View style={styles.headerRow}>
         <View style={styles.subjectBadge}>
           <Text style={styles.subjectText}>{post.subject}</Text>
         </View>
+        {/* StatusBadge shows pending / accepted / rejected / withdrawn */}
         <StatusBadge status={application.status} />
       </View>
 
-      {/* Post title */}
+      {/* ── Post title ── */}
       <Text style={styles.title} numberOfLines={2}>
         {post.title}
       </Text>
 
-      {/* Meta */}
+      {/* ── Meta: area and salary ── */}
       <View style={styles.metaRow}>
         <MetaItem icon="location-outline" label={post.area} />
-        <MetaItem icon="cash-outline" label={formatSalary(post.salary)} />
+        <MetaItem icon="cash-outline"     label={formatSalary(post.salary)} />
       </View>
 
-      {/* Message preview */}
+      {/* ── Message preview ──
+          Shows the first ~120 characters of the tutor's application message. */}
       <View style={styles.messageBox}>
         <Text style={styles.messageLabel}>Your message</Text>
         <Text style={styles.messageText} numberOfLines={2}>
@@ -81,12 +115,15 @@ export function ApplicationCard({
         </Text>
       </View>
 
-      {/* Footer */}
+      {/* ── Footer: applied date (left) + Withdraw button (right) ──
+          The Withdraw button only renders for pending applications —
+          conditional rendering with a ternary (Week 1). */}
       <View style={styles.footerRow}>
         <Text style={styles.dateText}>
           Applied {formatDate(application.appliedAt)}
         </Text>
 
+        {/* Only pending applications can be withdrawn */}
         {application.status === 'pending' ? (
           <TouchableOpacity
             style={styles.withdrawButton}
@@ -97,6 +134,7 @@ export function ApplicationCard({
             accessibilityRole="button"
             hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           >
+            {/* Show spinner while this specific card's withdraw is in progress */}
             {isWithdrawing ? (
               <ActivityIndicator size="small" color={Colors.rejected} />
             ) : (
@@ -116,6 +154,10 @@ export function ApplicationCard({
   );
 }
 
+// ---------------------------------------------------------------------------
+// MetaItem sub-component
+// ---------------------------------------------------------------------------
+// Icon + label row — defined here because only this card uses it.
 interface MetaItemProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
@@ -130,6 +172,9 @@ function MetaItem({ icon, label }: MetaItemProps) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
