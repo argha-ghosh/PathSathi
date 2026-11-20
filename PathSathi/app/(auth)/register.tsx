@@ -1,35 +1,11 @@
-// app/(auth)/register.tsx
-// Unified registration screen – handles both Tutor and Student roles.
-// Role is passed via query param: /(auth)/register?role=tutor or ?role=student
-
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-  type KeyboardTypeOptions,
-  type ReturnKeyTypeOptions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, type KeyboardTypeOptions, type ReturnKeyTypeOptions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors, Radius, Shadow, Spacing, TouchTarget, Typography } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { AuthError } from '../../services/authApi';
-import {
-  Colors,
-  Typography,
-  Spacing,
-  Radius,
-  Shadow,
-  TouchTarget,
-} from '../../constants/theme';
 
 interface FormErrors {
   name?: string;

@@ -1,35 +1,14 @@
-// context/AuthContext.tsx
-// Unified auth context for both Tutor and Student roles.
-// User session is persisted in AsyncStorage so login survives app restarts.
-
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { TutorProfile } from '../types/tutor';
-import type { AuthUser } from '../services/authApi';
-import {
-  login as apiLogin,
-  registerTutor as apiRegisterTutor,
-  registerStudent as apiRegisterStudent,
-  logout as apiLogout,
-} from '../services/authApi';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { setCurrentUserId } from '../mocks/authStore';
-import {
-  getMyProfile,
-  updateMyProfile,
-} from '../services/tutorApi';
+import type { AuthUser } from '../services/authApi';
+import { login as apiLogin, logout as apiLogout, registerStudent as apiRegisterStudent, registerTutor as apiRegisterTutor } from '../services/authApi';
+import { getMyProfile, updateMyProfile } from '../services/tutorApi';
+import type { TutorProfile } from '../types/tutor';
 
 const SESSION_KEY = '@pathsathi_user';
 
-// ---------------------------------------------------------------------------
 // Types
-// ---------------------------------------------------------------------------
 
 interface AuthContextValue {
   user: AuthUser | null;

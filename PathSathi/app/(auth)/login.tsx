@@ -1,32 +1,11 @@
-// app/(auth)/login.tsx
-// Unified login screen – role selector (Tutor / Student) + email + password.
-
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors, Radius, Shadow, Spacing, TouchTarget, Typography } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { AuthError } from '../../services/authApi';
-import {
-  Colors,
-  Typography,
-  Spacing,
-  Radius,
-  Shadow,
-  TouchTarget,
-} from '../../constants/theme';
 
 type Role = 'tutor' | 'student';
 

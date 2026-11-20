@@ -1,32 +1,10 @@
-// app/(tutor)/_layout.tsx
-// Tab navigator for the entire Tutor section.
-//
-// This file is a _layout.tsx — Expo Router reads it automatically and uses
-// it as the navigator wrapper for every screen inside the (tutor) folder.
-//
-// We define THREE bottom tabs here: Board, Applications, and Profile.
-// Each tab name matches a file or folder inside app/(tutor)/:
-//   - 'board'        → app/(tutor)/board/   (a folder with its own _layout.tsx)
-//   - 'applications' → app/(tutor)/applications.tsx
-//   - 'profile'      → app/(tutor)/profile/ (a folder with its own _layout.tsx)
-//
-// Lab concept: Tab navigators (Week 3 — Expo Router tabs)
-
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 import { Colors, Spacing, Typography } from '../../constants/theme';
 
-// TypeScript type alias so we get autocomplete on Ionicons icon names
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
-// ---------------------------------------------------------------------------
-// Tab configuration array
-// ---------------------------------------------------------------------------
-// We define the tabs as a data array instead of repeating <Tabs.Screen> three
-// times manually. Each object holds everything we need to render one tab entry.
-// This is the same "data-driven rendering" pattern as FlatList (Week 2).
 
 interface TabConfig {
   name: string;         // must match the file/folder name inside (tutor)/
